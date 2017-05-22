@@ -2,6 +2,8 @@
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#define RED_PIN 13
+#define GREEN_PIN 12
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -9,13 +11,18 @@ long lastMsg = 0;
 char msg[50];
 int value = 0;
 
+
 void setup() {
-  /*pinMode(6, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
-  pinMode(7, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
   Serial.begin(115200);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
-  client.setCallback(callback);*/
+  client.setCallback(callback);
+  pinMode(RED_PIN, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
+  pinMode(GREEN_PIN, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
+  /*
+  
+  
+  */
 }
 
 void setup_wifi() {
@@ -27,7 +34,7 @@ void setup_wifi() {
   Serial.println(ssid);
 
   WiFi.begin(ssid, password);
-
+  delay(50);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -51,23 +58,23 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println();
 
   // Switch on the LED if an 1 was received as first character
-  if ((char)payload[0] == '1') {
+  if ((char)payload[0] == '0') {
     if(strcmp(topic, "/lghs/traffic_light/green") == 0) {
       Serial.println("sending LOW on 2 (green)");
-      digitalWrite(6, LOW);   // Turn the LED on (Note that LOW is the voltage level
+      digitalWrite(GREEN_PIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
     }
     if(strcmp(topic, "/lghs/traffic_light/red") == 0) {
       Serial.println("sending LOW on 0 (red)");
-      digitalWrite(7, LOW);   // Turn the LED on (Note that LOW is the voltage level
+      digitalWrite(RED_PIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
     }
   } else {
     if(strcmp(topic, "/lghs/traffic_light/green") == 0) {
       Serial.println("sending HIGH on 2 (green)");
-      digitalWrite(6, HIGH);   // Turn the LED on (Note that LOW is the voltage level
+      digitalWrite(GREEN_PIN, HIGH);   // Turn the LED on (Note that LOW is the voltage level
     }
     if(strcmp(topic, "/lghs/traffic_light/red") == 0) {
       Serial.println("sending HIGH on 0 (red)");
-      digitalWrite(7, HIGH);   // Turn the LED on (Note that LOW is the voltage level
+      digitalWrite(RED_PIN, HIGH);   // Turn the LED on (Note that LOW is the voltage level
     }
   }
 
