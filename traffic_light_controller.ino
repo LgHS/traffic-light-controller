@@ -13,15 +13,19 @@ int value = 0;
 
 
 void setup() {
+  pinMode(RED_PIN, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
+  pinMode(GREEN_PIN, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
+
   Serial.begin(115200);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
-  pinMode(RED_PIN, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
-  pinMode(GREEN_PIN, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
+
+  digitalWrite(GREEN_PIN, LOW);
+  digitalWrite(RED_PIN, LOW);
   /*
-  
-  
+
+
   */
 }
 
@@ -37,13 +41,17 @@ void setup_wifi() {
   delay(50);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
+    // Serial.print(".");
+    // if wifi disconnected
+    blinkLeds(1, 2, 100);
   }
 
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+  // as soon as wifi is connected, we blink green 5 times
+  blinkLeds(0, 10, 10);
 }
 
 
@@ -56,28 +64,33 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print((char)payload[i]);
   }
   Serial.println();
-
-  // Switch on the LED if an 1 was received as first character
-  if ((char)payload[0] == '0') {
-    if(strcmp(topic, "/lghs/traffic_light/green") == 0) {
+  if (strcmp(topic, "/lghs/traffic_light/blink") == 0) {
+    int secs = payload[0]-'0';
+    if(secs > 0 && secs < 9){
+      blinkSeconds(secs);
+    }
+    
+  }
+  // Switch off the LED if an 1 was received as first character
+  if ((char)payload[0] == '1') {
+    if (strcmp(topic, "/lghs/traffic_light/green") == 0) {
       Serial.println("sending LOW on 2 (green)");
       digitalWrite(GREEN_PIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
     }
-    if(strcmp(topic, "/lghs/traffic_light/red") == 0) {
+    if (strcmp(topic, "/lghs/traffic_light/red") == 0) {
       Serial.println("sending LOW on 0 (red)");
       digitalWrite(RED_PIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
     }
-  } else {
-    if(strcmp(topic, "/lghs/traffic_light/green") == 0) {
+  } else if ((char)payload[0] == '0') {
+    if (strcmp(topic, "/lghs/traffic_light/green") == 0) {
       Serial.println("sending HIGH on 2 (green)");
       digitalWrite(GREEN_PIN, HIGH);   // Turn the LED on (Note that LOW is the voltage level
     }
-    if(strcmp(topic, "/lghs/traffic_light/red") == 0) {
+    if (strcmp(topic, "/lghs/traffic_light/red") == 0) {
       Serial.println("sending HIGH on 0 (red)");
       digitalWrite(RED_PIN, HIGH);   // Turn the LED on (Note that LOW is the voltage level
     }
   }
-
 }
 
 void reconnect() {
@@ -90,6 +103,7 @@ void reconnect() {
       // ... and resubscribe
       client.subscribe("/lghs/traffic_light/red");
       client.subscribe("/lghs/traffic_light/green");
+      client.subscribe("/lghs/traffic_light/blink");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -98,6 +112,36 @@ void reconnect() {
       delay(5000);
     }
   }
+
+}
+
+/**
+   blink a led
+   @param _color : 0 : green, 1 : red
+   @param _times : how many blinks
+   @param _delay between blinks
+*/
+void blinkLeds(int _color, int _times, int _delay) {
+  _delay = constrain(_delay, 0, 500);
+  if (_color > 1) _color = 1;
+  for (int i = 0; i < _times; i++) {
+    digitalWrite(GREEN_PIN + _color, HIGH);
+    delay(_delay);
+    digitalWrite(GREEN_PIN + _color, LOW);
+  }
+}
+void blinkSeconds(int secs) {
+  long startPoint = millis();
+  while (millis() < startPoint + secs * 1000) {
+    digitalWrite(GREEN_PIN, HIGH);
+    digitalWrite(RED_PIN, LOW);
+    delay(100);
+    digitalWrite(GREEN_PIN, LOW);
+    digitalWrite(RED_PIN, HIGH);
+    delay(100);
+  }
+  digitalWrite(GREEN_PIN, LOW);
+  digitalWrite(RED_PIN, LOW);
 }
 
 void loop() {
