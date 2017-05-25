@@ -20,9 +20,10 @@ void setup() {
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
-
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(RED_PIN, LOW);
+ 
+  // INVERTED LOGIC !!! those turn the lights off
+  digitalWrite(GREEN_PIN, HIGH);
+  digitalWrite(RED_PIN, HIGH);;
   /*
 
 
@@ -65,32 +66,34 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   Serial.println();
   if (strcmp(topic, "/lghs/traffic_light/blink") == 0) {
-    int secs = payload[0]-'0';
-    if(secs > 0 && secs < 9){
+    int secs = payload[0] - '0';
+    if (secs > 0 && secs < 9) {
       blinkSeconds(secs);
     }
-    
+
+  } else {
+    // Switch off the LED if an 1 was received as first character
+    if ((char)payload[0] == '1') {
+      if (strcmp(topic, "/lghs/traffic_light/green") == 0) {
+        Serial.println("sending LOW on 2 (green)");
+        digitalWrite(GREEN_PIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
+      }
+      if (strcmp(topic, "/lghs/traffic_light/red") == 0) {
+        Serial.println("sending LOW on 0 (red)");
+        digitalWrite(RED_PIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
+      }
+    } else if ((char)payload[0] == '0') {
+      if (strcmp(topic, "/lghs/traffic_light/green") == 0) {
+        Serial.println("sending HIGH on 2 (green)");
+        digitalWrite(GREEN_PIN, HIGH);   // Turn the LED on (Note that LOW is the voltage level
+      }
+      if (strcmp(topic, "/lghs/traffic_light/red") == 0) {
+        Serial.println("sending HIGH on 0 (red)");
+        digitalWrite(RED_PIN, HIGH);   // Turn the LED on (Note that LOW is the voltage level
+      }
+    }
   }
-  // Switch off the LED if an 1 was received as first character
-  if ((char)payload[0] == '1') {
-    if (strcmp(topic, "/lghs/traffic_light/green") == 0) {
-      Serial.println("sending LOW on 2 (green)");
-      digitalWrite(GREEN_PIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
-    }
-    if (strcmp(topic, "/lghs/traffic_light/red") == 0) {
-      Serial.println("sending LOW on 0 (red)");
-      digitalWrite(RED_PIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
-    }
-  } else if ((char)payload[0] == '0') {
-    if (strcmp(topic, "/lghs/traffic_light/green") == 0) {
-      Serial.println("sending HIGH on 2 (green)");
-      digitalWrite(GREEN_PIN, HIGH);   // Turn the LED on (Note that LOW is the voltage level
-    }
-    if (strcmp(topic, "/lghs/traffic_light/red") == 0) {
-      Serial.println("sending HIGH on 0 (red)");
-      digitalWrite(RED_PIN, HIGH);   // Turn the LED on (Note that LOW is the voltage level
-    }
-  }
+
 }
 
 void reconnect() {
@@ -129,19 +132,25 @@ void blinkLeds(int _color, int _times, int _delay) {
     delay(_delay);
     digitalWrite(GREEN_PIN + _color, LOW);
   }
+  digitalWrite(GREEN_PIN, HIGH);
+  digitalWrite(RED_PIN, HIGH);
 }
+
 void blinkSeconds(int secs) {
   long startPoint = millis();
   while (millis() < startPoint + secs * 1000) {
     digitalWrite(GREEN_PIN, HIGH);
     digitalWrite(RED_PIN, LOW);
-    delay(100);
+    delay(70);
     digitalWrite(GREEN_PIN, LOW);
     digitalWrite(RED_PIN, HIGH);
-    delay(100);
+    delay(70);
   }
-  digitalWrite(GREEN_PIN, LOW);
-  digitalWrite(RED_PIN, LOW);
+  
+  
+  digitalWrite(GREEN_PIN, HIGH);
+  digitalWrite(RED_PIN, HIGH);
+  
 }
 
 void loop() {
@@ -149,5 +158,6 @@ void loop() {
     reconnect();
   }
   client.loop();
+  
 }
 
